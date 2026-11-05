@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TimberPro</title>
+<style>
+:root{--bg:#f6f3ee;--card:#fff;--ink:#2a2118;--mute:#7a6c5d;--line:#e3dbcf;--accent:#8a5a2b;--ai:#fff;--soft:#f0e7da;--bad:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1612;--card:#262019;--ink:#f1e9de;--mute:#a89886;--line:#3a3128;--accent:#d49a5c;--ai:#1b1612;--soft:#33291f;--bad:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1612;--card:#262019;--ink:#f1e9de;--mute:#a89886;--line:#3a3128;--accent:#d49a5c;--ai:#1b1612;--soft:#33291f;--bad:#ff8a80;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.4}
+main{max-width:1100px;margin:0 auto;padding:14px 12px 40px}
+h1{font-size:22px;margin:0}.sub{color:var(--mute);margin:0 0 12px;font-size:13px}
+h2{font-size:15px;margin:0 0 8px}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}
+nav button,.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+nav button.on,.btn.pri{background:var(--accent);color:var(--ai);border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:1000px}
+th{position:sticky;top:0;background:var(--soft);font-size:11px;text-align:left;padding:6px 4px;white-space:nowrap}
+td{padding:3px;border-bottom:1px solid var(--line);vertical-align:middle}
+td input,td select,.f input,.f select{width:100%;font-size:13px;padding:6px 5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.bad td input.req{border-color:var(--bad)}
+.x{border:0;background:none;color:var(--mute);cursor:pointer;font-size:15px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.k{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.k .l{font-size:11px;color:var(--mute)}.k .v{font-size:19px;font-weight:700}
+.k.hi{background:var(--accent);color:var(--ai)}.k.hi .l{color:var(--ai);opacity:.85}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.f label{display:block;font-size:11px;color:var(--mute);margin-bottom:2px}
+.f input,.f select{font-size:15px;padding:8px}
+.sm{font-size:12px;color:var(--mute)}
+.warn{color:var(--bad);font-size:12px}
+.pass{color:#2e7d32}
+pre{white-space:pre-wrap;font-size:12px;margin:0}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>TimberPro</h1>
+<p class="sub">Timber measurement, costing and procurement. Data saves in this browser.</p>
+<nav id="nav"></nav>
+
+<section id="p-calc">
+  <div class="tools">
+    <button class="btn pri" id="addRow">+ Add row</button>
+    <button class="btn" id="csv">Export CSV</button>
+    <button class="btn" id="print">Print / PDF</button>
+    <button class="btn" id="sample">Load sample</button>
+    <button class="btn" id="clear">Clear all</button>
+    <input id="search" placeholder="Search species or code" style="padding:8px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);font-size:14px">
+  </div>
+  <div class="card scroll"><table id="tbl"></table></div>
+  <div class="sm">Rows with zero, negative or missing values are flagged and excluded from totals. Quantity must be a whole number. Dimensions are used exactly as entered, so choose nominal or actual sizes yourself.</div>
+  <div class="cards" id="cards" style="margin-top:12px"></div>
+
+  <div class="card">
+    <h2>Wastage, extra costs and selling price</h2>
+    <div class="g f">
+      <div><label>Wastage</label><select id="wsel"><option>0</option><option>5</option><option selected>10</option><option>15</option><option>20</option><option value="c">Custom</option></select></div>
+      <div id="wcw" class="hide"><label>Custom wastage %</label><input id="wc" type="number" inputmode="decimal" min="0" value="12"></div>
+      <div><label>Transport</label><input class="ex" type="number" inputmode="decimal" min="0" value="0"></div>
+      <div><label>Handling</label><input class="ex" type="number" inputmode="decimal" min="0" value="0"></div>
+      <div><label>Treatment</label><input class="ex" type="number" inputmode="decimal" min="0" value="0"></div>
+      <div><label>Processing</label><input class="ex" type="number" inputmode="decimal" min="0" value="0"></div>
+      <div><label>Other</label><input class="ex" type="number" inputmode="decimal" min="0" value="0"></div>
+      <div><label>Pricing method</label><select id="pm"><option value="mk">Markup on cost</option><option value="gm">Gross margin</option></select></div>
+      <div><label>Percentage (%)</label><input id="pv" type="number" inputmode="decimal" min="0" value="25"></div>
+    </div>
+    <div class="cards" id="fin" style="margin-top:12px;margin-bottom:0"></div>
+    <div class="sm" style="margin-top:8px">Markup: selling = cost × (1 + m). Gross margin: selling = cost ÷ (1 − m). They give different prices. Purchase cost is on procurement volume (net + wastage).</div>
+  </div>
+  <div class="card scroll"><h2>Subtotals by species</h2><table id="sp" style="min-width:420px"></table></div>
+</section>
+
+<section id="p-species" class="hide">
+  <div class="card">
+    <h2>Species and rates</h2>
+    <p class="sm">Selecting a species in the calculator fills its saved rate and pricing basis. No prices are preset; enter your own.</p>
+    <div class="tools"><button class="btn pri" id="addSp">+ Add species</button></div>
+    <div class="scroll"><table id="spdb" style="min-width:520px"></table></div>
+  </div>
+</section>
+
+<section id="p-conv" class="hide">
+  <div class="card">
+    <h2>Measurement converter</h2>
+    <div class="g f">
+      <div><label>Category</label><select id="cc"><option value="len">Length</option><option value="area">Area</option><option value="vol">Volume</option></select></div>
+      <div><label>Value</label><input id="cv" type="number" inputmode="decimal" value="1"></div>
+      <div><label>From</label><select id="cf"></select></div>
+      <div><label>To</label><select id="ct"></select></div>
+    </div>
+    <div class="k hi" style="margin-top:12px"><div class="l">Result</div><div class="v" id="cr">—</div></div>
+    <p class="sm">Volume conversions (m³, ft³, board feet) are separate from length conversions. 1 BF = 0.002359737216 m³; 1 ft³ = 12 BF.</p>
+  </div>
+</section>
+
+<section id="p-test" class="hide">
+  <div class="card"><h2>Calculation self-tests</h2><pre id="tr"></pre></div>
+</section>
+</main>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var U={mm:1,cm:10,m:1000,in:25.4,ft:304.8};
+var BF=2359737.216;
+var DEF=["Sudanese Teak","Mahogany","Mvule","Meru Oak","African Blackwood","Rosewood","Cedar","Cypress","Pine","Eucalyptus","Meranti","Sapele","Iroko","Walnut","Beech","Ash","Oak","Teak","Douglas Fir","Spruce","Accoya","Lunawood"];
+var PB={bf:"per board foot",m3:"per m³",cf:"per ft³",pc:"per piece",lm:"per linear m",lf:"per linear ft",sqm:"per m²"};
+var S={rows:[],species:DEF.map(function(n){return{n:n,rate:"",pb:"bf"}}),ex:[0,0,0,0,0],w:"10",wc:"12",pm:"mk",pv:"25",seq:1};
+
+function save(){try{localStorage.setItem("timberpro-v1",JSON.stringify(S))}catch(e){}}
+function load(){try{var d=localStorage.getItem("timberpro-v1");if(d){var o=JSON.parse(d);if(o&&o.rows&&o.species)S=o}}catch(e){}}
+
+function row(o){return Object.assign({code:"TP-"+String(S.seq++).padStart(3,"0"),sp:"",t:"",tu:"mm",w:"",wu:"mm",l:"",lu:"mm",q:"",dim:"Actual",pb:"bf",rate:"",rem:""},o||{})}
+
+function calc(r){
+  var t=+r.t,w=+r.w,l=+r.l,q=+r.q;
+  if(!(t>0&&w>0&&l>0&&q>0&&Number.isInteger(q)))return{ok:false};
+  var tm=t*U[r.tu],wm=w*U[r.wu],lm=l*U[r.lu];
+  var mm3=tm*wm*lm,bfp=mm3/BF,bf=bfp*q,m3=mm3*q/1e9,lin=lm/1000*q,rate=+r.rate||0;
+  var a={bf:bf,m3:m3,cf:m3*35.3146667,pc:q,lm:lin,lf:lin*3.280839895,sqm:wm/1000*lm/1000*q}[r.pb];
+  return{ok:true,bfp:bfp,bf:bf,m3:m3,amt:rate*a,q:q};
+}
+function wastePct(){return S.w==="c"?(+S.wc||0):(+S.w||0)}
+
+var tabs=[["calc","Calculator"],["species","Species & rates"],["conv","Converter"],["test","Self-tests"]];
+function nav(){
+  $("nav").innerHTML=tabs.map(function(t,i){return'<button data-t="'+t[0]+'" class="'+(i===0?"on":"")+'">'+t[1]+'</button>'}).join("");
+}
+$("nav").addEventListener("click",function(e){
+  var t=e.target.getAttribute("data-t");if(!t)return;
+  tabs.forEach(function(x){$("p-"+x[0]).classList.toggle("hide",x[0]!==t)});
+  Array.prototype.forEach.call($("nav").children,function(b){b.classList.toggle("on",b.getAttribute("data-t")===t)});
+  if(t==="test")runTests();
+});
+
+function opts(arr,sel){return arr.map(function(a){return'<option'+(a===sel?" selected":"")+'>'+a+'</option>'}).join("")}
+function unitSel(k,v,i){return'<select data-i="'+i+'" data-k="'+k+'">'+opts(["mm","cm","m","in","ft"],v)+'</select>'}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+function inp(k,v,i,type,cls,w){return'<input data-i="'+i+'" data-k="'+k+'" class="'+(cls||"")+'" '+(type==="n"?'type="number" inputmode="decimal" min="0" ':'')+'value="'+esc(v)+'" style="min-width:'+(w||60)+'px">'}
+
+function renderTable(){
+  var h='<tr><th>No.</th><th>Code</th><th>Species</th><th colspan="2">Thickness</th><th colspan="2">Width</th><th colspan="2">Length</th><th>Qty</th><th>Dims</th><th>Price basis</th><th>Rate</th><th>BF/pc</th><th>Total BF</th><th>m³</th><th>Amount</th><th>Remarks</th><th></th></tr>';
+  var q=$("search").value.toLowerCase();
+  S.rows.forEach(function(r,i){
+    if(q&&(r.sp+" "+r.code).toLowerCase().indexOf(q)<0)return;
+    h+='<tr data-r="'+i+'"><td class="n">'+(i+1)+'</td><td>'+inp("code",r.code,i,"",null,70)+'</td>'+
+    '<td><select data-i="'+i+'" data-k="sp" style="min-width:110px"><option value=""></option>'+S.species.map(function(s){return'<option'+(s.n===r.sp?" selected":"")+'>'+esc(s.n)+'</option>'}).join("")+'</select></td>'+
+    '<td>'+inp("t",r.t,i,"n","req")+'</td><td>'+unitSel("tu",r.tu,i)+'</td>'+
+    '<td>'+inp("w",r.w,i,"n","req")+'</td><td>'+unitSel("wu",r.wu,i)+'</td>'+
+    '<td>'+inp("l",r.l,i,"n","req",70)+'</td><td>'+unitSel("lu",r.lu,i)+'</td>'+
+    '<td>'+inp("q",r.q,i,"n","req",50)+'</td>'+
+    '<td><select data-i="'+i+'" data-k="dim">'+opts(["Nominal","Actual","Rough-sawn","Dressed"],r.dim)+'</select></td>'+
+    '<td><select data-i="'+i+'" data-k="pb">'+Object.keys(PB).map(function(k){return'<option value="'+k+'"'+(k===r.pb?" selected":"")+'>'+PB[k]+'</option>'}).join("")+'</select></td>'+
+    '<td>'+inp("rate",r.rate,i,"n",null,70)+'</td>'+
+    '<td class="n" data-c="bfp"></td><td class="n" data-c="bf"></td><td class="n" data-c="m3"></td><td class="n" data-c="amt"></td>'+
+    '<td>'+inp("rem",r.rem,i,"",null,90)+'</td>'+
+    '<td style="white-space:nowrap"><button class="x" title="Duplicate" data-dup="'+i+'">⧉</button><button class="x" title="Insert below" data-ins="'+i+'">＋</button><button class="x" title="Delete" data-del="'+i+'">✕</button></td></tr>';
+  });
+  $("tbl").innerHTML=h;
+  update();
+}
+
+function f(n,d){return n.toLocaleString("en",{minimumFractionDigits:d,maximumFractionDigits:d})}
+
+function update(){
+  var tot={n:0,pc:0,bf:0,m3:0,amt:0},by={};
+  S.rows.forEach(function(r,i){
+    var c=calc(r),tr=document.querySelector('tr[data-r="'+i+'"]');
+    if(tr){
+      var set=function(k,v){tr.querySelector('[data-c="'+k+'"]').textContent=v};
+      tr.classList.toggle("bad",!c.ok&&(r.t!==""||r.w!==""||r.l!==""||r.q!==""));
+      set("bfp",c.ok?f(c.bfp,2):"");set("bf",c.ok?f(c.bf,2):"");set("m3",c.ok?f(c.m3,3):"");set("amt",c.ok?f(c.amt,2):"");
+    }
+    if(!c.ok)return;
+    tot.n++;tot.pc+=c.q;tot.bf+=c.bf;tot.m3+=c.m3;tot.amt+=c.amt;
+    var k=r.sp||"(unassigned)";by[k]=by[k]||{pc:0,bf:0,m3:0,amt:0};
+    by[k].pc+=c.q;by[k].bf+=c.bf;by[k].m3+=c.m3;by[k].amt+=c.amt;
+  });
+  var wp=wastePct(),proc=tot.bf*(1+wp/100),wbf=proc-tot.bf;
+  var card=function(l,v,hi){return'<div class="k'+(hi?" hi":"")+'"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>'};
+  $("cards").innerHTML=card("Valid items",tot.n)+card("Pieces",f(tot.pc,0))+card("Net board feet",f(tot.bf,2),1)+card("Net m³",f(tot.m3,3))+card("Net ft³",f(tot.m3*35.3146667,2))+
+    card("Avg BF / piece",tot.pc?f(tot.bf/tot.pc,2):"0")+card("Avg cost / piece",tot.pc?f(tot.amt/tot.pc,2):"0")+card("Net cost",f(tot.amt,2));
+  var purchase=tot.amt*(1+wp/100),extras=S.ex.reduce(function(a,b){return a+(+b||0)},0),landed=purchase+extras;
+  var m=(+S.pv||0)/100,sell=null;
+  if(S.pm==="mk")sell=landed*(1+m);else if(m<1)sell=landed/(1-m);
+  var gp=sell===null?null:sell-landed;
+  $("fin").innerHTML=card("Wastage BF ("+f(wp,1)+"%)",f(wbf,2))+card("Procurement BF",f(proc,2),1)+card("Procurement m³",f(proc*0.002359737216,3))+
+    card("Purchase cost",f(purchase,2))+card("Landed cost",f(landed,2))+
+    card("Selling price",sell===null?"margin must be < 100%":f(sell,2),1)+card("Gross profit",gp===null?"—":f(gp,2))+
+    card("Gross profit %",sell?f(gp/sell*100,1)+"%":"—")+card("Selling / BF (procured)",sell&&proc?f(sell/proc,2):"—");
+  var h='<tr><th>Species</th><th>Pieces</th><th>BF</th><th>m³</th><th>Amount</th></tr>';
+  Object.keys(by).sort().forEach(function(k){var b=by[k];h+='<tr><td>'+esc(k)+'</td><td class="n">'+f(b.pc,0)+'</td><td class="n">'+f(b.bf,2)+'</td><td class="n">'+f(b.m3,3)+'</td><td class="n">'+f(b.amt,2)+'</td></tr>'});
+  $("sp").innerHTML=h;
+  save();
+}
+
+$("tbl").addEventListener("input",function(e){
+  var i=e.target.getAttribute("data-i"),k=e.target.getAttribute("data-k");if(i===null)return;
+  S.rows[i][k]=e.target.value;
+  if(k==="sp"){
+    var s=S.species.filter(function(x){return x.n===e.target.value})[0];
+    if(s&&s.rate!==""){S.rows[i].rate=s.rate;S.rows[i].pb=s.pb;renderTable();return}
+  }
+  update();
+});
+$("tbl").addEventListener("click",function(e){
+  var a=e.target,d;
+  if((d=a.getAttribute("data-del"))!==null){S.rows.splice(+d,1);renderTable()}
+  else if((d=a.getAttribute("data-dup"))!==null){var c=Object.assign({},S.rows[+d],{code:row().code});S.rows.splice(+d+1,0,c);renderTable()}
+  else if((d=a.getAttribute("data-ins"))!==null){S.rows.splice(+d+1,0,row());renderTable()}
+});
+$("addRow").onclick=function(){S.rows.push(row());renderTable()};
+$("search").oninput=renderTable;
+$("clear").onclick=function(){if(confirm("Delete all rows?")){S.rows=[];renderTable()}};
+$("print").onclick=function(){window.print()};
+$("sample").onclick=function(){
+  var d=[["Sudanese Teak",50,150,3000,25],["Mahogany",25,100,2400,40],["Mvule",75,150,3600,15],["Meru Oak",50,100,2400,30],["Pine",38,100,3000,50]];
+  d.forEach(function(x){S.rows.push(row({sp:x[0],t:x[1],w:x[2],l:x[3],q:x[4]}))});
+  renderTable();
+};
+$("csv").onclick=function(){
+  var h=["No","Code","Species","Thickness","T unit","Width","W unit","Length","L unit","Qty","Dims","Price basis","Rate","BF/pc","Total BF","m3","Amount","Remarks"];
+  var lines=[h.join(",")];
+  S.rows.forEach(function(r,i){
+    var c=calc(r);
+    var v=[i+1,r.code,r.sp,r.t,r.tu,r.w,r.wu,r.l,r.lu,r.q,r.dim,PB[r.pb],r.rate,c.ok?c.bfp.toFixed(4):"",c.ok?c.bf.toFixed(4):"",c.ok?c.m3.toFixed(5):"",c.ok?c.amt.toFixed(2):"",r.rem];
+    lines.push(v.map(function(x){return'"'+String(x).replace(/"/g,'""')+'"'}).join(","));
+  });
+  var uri="data:text/csv;charset=utf-8,"+encodeURIComponent(lines.join("\n"));
+  var a=document.createElement("a");a.href=uri;a.download="timber-schedule.csv";document.body.appendChild(a);a.click();a.remove();
+  if(!document.querySelector("#csvnote")){var p=document.createElement("div");p.id="csvnote";p.className="sm";p.textContent="If the download does not start inside this preview, open the page in its own tab and try again.";$("csv").parentNode.parentNode.insertBefore(p,$("tbl").parentNode)}
+};
+
+/* settings */
+$("wsel").onchange=function(){S.w=this.value;$("wcw").classList.toggle("hide",this.value!=="c");update()};
+$("wc").oninput=function(){S.wc=this.value;update()};
+Array.prototype.forEach.call(document.querySelectorAll(".ex"),function(el,i){el.oninput=function(){S.ex[i]=el.value;update()}});
+$("pm").onchange=function(){S.pm=this.value;update()};
+$("pv").oninput=function(){S.pv=this.value;update()};
+
+/* species */
+function renderSp(){
+  var h='<tr><th>Species</th><th>Purchase rate</th><th>Basis</th><th></th></tr>';
+  S.species.forEach(function(s,i){
+    h+='<tr><td><input data-s="'+i+'" data-k="n" value="'+esc(s.n)+'"></td><td><input data-s="'+i+'" data-k="rate" type="number" inputmode="decimal" min="0" value="'+esc(s.rate)+'"></td><td><select data-s="'+i+'" data-k="pb">'+Object.keys(PB).map(function(k){return'<option value="'+k+'"'+(k===s.pb?" selected":"")+'>'+PB[k]+'</option>'}).join("")+'</select></td><td><button class="x" data-sd="'+i+'">✕</button></td></tr>';
+  });
+  $("spdb").innerHTML=h;
+}
+$("spdb").addEventListener("input",function(e){
+  var i=e.target.getAttribute("data-s");if(i===null)return;
+  var old=S.species[i].n;S.species[i][e.target.getAttribute("data-k")]=e.target.value;
+  if(e.target.getAttribute("data-k")==="n")S.rows.forEach(function(r){if(r.sp===old)r.sp=e.target.value});
+  save();
+});
+$("spdb").addEventListener("change",function(){renderTable()});
+$("spdb").addEventListener("click",function(e){var d=e.target.getAttribute("data-sd");if(d!==null){S.species.splice(+d,1);renderSp();renderTable()}});
+$("addSp").onclick=function(){S.species.push({n:"New species",rate:"",pb:"bf"});renderSp();renderTable()};
+
+/* converter */
+var C={len:{mm:.001,cm:.01,m:1,"in":.0254,ft:.3048,yd:.9144},
+ area:{"mm²":1e-6,"cm²":1e-4,"m²":1,"in²":6.4516e-4,"ft²":.09290304,"yd²":.83612736,acre:4046.8564224},
+ vol:{"mm³":1e-9,"cm³":1e-6,"m³":1,"in³":1.6387064e-5,"ft³":.028316846592,"board feet":.002359737216,litres:.001}};
+function convFill(){
+  var u=Object.keys(C[$("cc").value]);
+  $("cf").innerHTML=opts(u,u[0]);$("ct").innerHTML=opts(u,u[2]||u[1]);convGo();
+}
+function convGo(){
+  var t=C[$("cc").value],v=parseFloat($("cv").value);
+  if(isNaN(v)){$("cr").textContent="—";return}
+  var r=v*t[$("cf").value]/t[$("ct").value];
+  $("cr").textContent=f(r,Math.abs(r)<1?6:4)+" "+$("ct").value;
+}
+$("cc").onchange=convFill;["cv","cf","ct"].forEach(function(i){$(i).oninput=convGo;$(i).onchange=convGo});
+
+/* tests */
+function runTests(){
+  var T=[],ok=function(n,a,b,tol){var p=Math.abs(a-b)<=(tol||1e-6);T.push((p?'<span class="pass">PASS</span> ':'<span class="warn">FAIL</span> ')+n+" → "+a.toFixed(4)+" (expected "+b.toFixed(4)+")")};
+  var R=function(o){return calc(Object.assign({tu:"mm",wu:"mm",lu:"mm",pb:"bf",rate:0},o))};
+  ok("2 in × 6 in × 8 ft = 8 BF",R({t:2,tu:"in",w:6,wu:"in",l:8,lu:"ft",q:1}).bf,8,1e-9);
+  ok("1 in × 12 in × 12 in (all inches) = 1 BF",R({t:1,tu:"in",w:12,wu:"in",l:12,lu:"in",q:1}).bf,1,1e-9);
+  ok("50×150×3000 mm × 25 pcs",R({t:50,w:150,l:3000,q:25}).bf,50*150*3000*25/2359737,0.01);
+  ok("Mixed units: 50 mm × 6 in × 3 m",R({t:50,w:6,wu:"in",l:3,lu:"m",q:1}).bfp,(50/25.4)*6*(3*3.280839895)/12,1e-6);
+  ok("Decimal: 1.5 in × 5.5 in × 2.4 m",R({t:1.5,tu:"in",w:5.5,wu:"in",l:2.4,lu:"m",q:2}).bf,2*1.5*5.5*(2.4*3.280839895)/12,1e-6);
+  ok("1 m³ in board feet",1/0.002359737216,423.776,0.01);
+  ok("10% wastage on 100 BF",100*(1+10/100),110,1e-9);
+  ok("Price per m³: 0.5 m³ × 800",R({t:100,w:100,l:1000,q:50,pb:"m3",rate:800}).amt,0.5*800,1e-6);
+  ok("Zero quantity rejected",R({t:50,w:50,l:1000,q:0}).ok?1:0,0);
+  ok("Negative dimension rejected",R({t:-5,w:50,l:1000,q:1}).ok?1:0,0);
+  ok("Missing value rejected",R({t:50,w:"",l:1000,q:1}).ok?1:0,0);
+  ok("Decimal quantity rejected",R({t:50,w:50,l:1000,q:1.5}).ok?1:0,0);
+  ok("Markup 25% on cost 100",100*(1+.25),125,1e-9);
+  ok("Gross margin 25% on cost 100",100/(1-.25),133.3333,1e-3);
+  $("tr").innerHTML=T.join("\n");
+}
+
+load();nav();
+if(!S.rows.length)S.rows.push(row());
+$("wsel").value=S.w;$("wcw").classList.toggle("hide",S.w!=="c");$("wc").value=S.wc;
+document.querySelectorAll(".ex").forEach(function(el,i){el.value=S.ex[i]});
+$("pm").value=S.pm;$("pv").value=S.pv;
+renderTable();renderSp();convFill();
+})();
+</script>
+</body>
+</html>
